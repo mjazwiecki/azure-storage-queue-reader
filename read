@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import random
+import json 
+import base64
+import time
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.storage import StorageManagementClient
+from azure.storage.queue import QueueClient
+from settings import AZURE_SUBSCRIPTION_ID, RESOURCE_GROUP, AZURE_STORAGE_ACCOUNT, QUEUE_NAME
+
+credential = DefaultAzureCredential()
+storage_client = StorageManagementClient(credential, AZURE_SUBSCRIPTION_ID)
+storage_queue_url = f"https://{AZURE_STORAGE_ACCOUNT}.queue.core.windows.net"
+storage_account_key = storage_client.storage_accounts.list_keys(RESOURCE_GROUP, AZURE_STORAGE_ACCOUNT).keys[0].value
+
+def read_message():
+    """
+    Reads a single message from a storage queue and prints its content.
+
+    This function connects to a storage queue using the provided account URL, queue name, and credential.
+    It then reads a single message from the queue, decodes the message content, and prints it.
+    Finally, it deletes the message from the queue.
+
+    If there are no messages in the queue, it prints a message indicating that.
+
+    Note: This function assumes that the variables `storage_queue_url`, `QUEUE_NAME`, and `storage_account_key`
+    have been defined with the appropriate values before calling this function.
+    """
+    queue_client = QueueClient(
+        account_url=storage_queue_url, 
+        queue_name=QUEUE_NAME,
+        credential=storage_account_key
+    )
+    
+    # read a single message from the queue
+    message = queue_client.receive_message()
+    if message:
+        decoded_message = decode_message(message.content)
+        print(f"Message from queue '{QUEUE_NAME}': {json.dumps(json.loads(decoded_message), indent=4)}")
+        queue_client.delete_message(message.id, message.pop_receipt)  # Delete the single message read from the queue
+    else:
+        print(f"No messages in the queue")
+
+def decode_message(base64_message):
+    """
+    Decode a base64-encoded message.
+
+    Args:
+        base64_message (str): The base64-encoded message to decode.
+
+    Returns:
+        str: The decoded message.
+
+    """
+    base64_bytes = base64_message.encode('utf-8')
+    message_bytes = base64.b64decode(base64_bytes)
+    message = message_bytes.decode('utf-8')
+    return message
+
+def main():
+    """
+    Main function that continuously reads messages from a storage queue.
+
+    This function calls the read_message function in a loop and sleeps for 10 seconds between each iteration.
+
+    Returns:
+        None
+    """
+    while True:
+        read_message()
+        time.sleep(10)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,5 @@
+
+azure-identity==1.17.1
+azure-storage-queue==12.11.0
+python-dotenv==1.0.1
+azure-mgmt-storage==21.2.1
