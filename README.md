@@ -14,8 +14,8 @@ This Python script reads messages from an [Azure Storage Queue](https://docs.mic
 1. **Clone the repository:**
 
     ```sh
-    git clone <repository_url>
-    cd <repository_directory>
+    git clone git@github.com:mjazwiecki/azure-storage-queue-reader.git
+    cd read
     ```
 
 2. **Create a virtual environment and activate it:**
